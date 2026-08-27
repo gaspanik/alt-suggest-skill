@@ -1,117 +1,129 @@
-# figma-alt-suggest-lite — Figma画像のALTテキスト提案（Figma Design Agent 用軽量版）
+# alt-suggest — Figma Image Alt-Text Audit (Figma Design Agent edition)
 
-> *This README is in Japanese only (tied to a Japanese-language paid course). The skill itself works in any language — see [`skills/figma-alt-suggest-lite/SKILL.md`](skills/figma-alt-suggest-lite/SKILL.md) for what it does.*
+Register this skill in Figma's custom skill feature, select a FRAME, SECTION, COMPONENT, or COMPONENT_SET on the canvas, and run it from the chat. It finds every image in the selection, actually looks at what each one shows, and proposes a specific alt-text description — or flags it as decorative with no description needed.
 
-Figmaの FRAME / SECTION / COMPONENT / COMPONENT_SET を選択して実行すると、選択内のすべての画像（`IMAGE`フィルを持つノード）の実際の見た目を確認し、具体的な日本語ALTテキストを提案する — あるいは装飾画像として説明文不要と判断する — Figma の Design Agent のカスタムスキル機能に登録して利用するスキルです。
-
-これは有料講座「[KMRVID Figma Skills](https://kmrvid-claude-skills.gaspanik.workers.dev/figma/)」で提供されているフル版`figma-alt-suggest`（提案の確認後、Dev Modeのアノテーションとして書き込む機能つき）から、書き込み機能を取り除いたトリムダウン版です。画像の検出と提案レポートの表示までを行い、Figmaファイルへの書き込みは一切行わない「診断＆レポートのみ」の軽量版です。**画像を1枚ずつ実際に見てALT文を考えるとどんな提案が出るか、まず試してみたい方**に向いています。
-
-> **フル版が気になる方へ**: この軽量版は画像の検出・分類・提案ロジック単体を体験いただくものです。フル版では提案の確認後、Figmaの Dev Mode → Annotations パネルに実際に書き込むところまで行えます。同じFigma Design Agent版の`figma-annotate`や[`figma-layer-rename-lite`](https://github.com/gaspanik/figma-layer-rename-lite-skill)と組み合わせて使うことも想定しています。`figma-annotate`は、フレーム内のデザインをもとに開発用のアノテーションを付与し、エンジニアとの間でのやりとり、またAIエージェントを使った実装精度の向上に寄与します。 `figma-contrast-check`（色のコントラストチェック）もFigma Skills講座内にFigma Design Agent版として収録されており、本スキルと同じ環境で組み合わせて使えます — ただし無料公開している[`figma-contrast-check-lite`](https://github.com/gaspanik/figma-contrast-check-lite-skill)はClaude Code + Figma MCP版で提供されているため、Lite版同士を試す場合は動作環境が異なる点にご注意ください（下記スコープ参照）。全スキルカタログはこちら: [KMRVID Figma Skills README](https://fragrant-edam-563.notion.site/KMRVID-Figma-Skills-README-md-3ad5dae25dd280d69c12c69b277d90b6)
-
-> **有料講座のプレビュー**: 講座内の各種スキルを実際に動かしている様子は、こちらの[YouTube](https://www.youtube.com/@kmrvid/videos)や講座の[無料プレビュー](https://kmrvid.com/apps/ldt-course/course/6922c0ad336ff5545bbff61d/6a6b17c49dc4e0183716f605?locale=ja)（アカウント作成、ログイン不要）に掲載しております。
+> *日本語 README はこちら: [README.ja.md](README.ja.md)*
 
 ---
 
-## これは何か
+## What this is
 
-ALTテキストは実装時、コードを書く人が後から考えることが多く、その時にはファイル名やレイヤー名から推測するしかありません（`hero.jpg` → 「hero」というALTでは意味がありません）。このスキルはその判断をデザインレビューの段階に前倒しします — 画像を実際に見られるのは、コードになる前のFigmaファイルの中だからです。
+Alt text usually gets decided (or skipped) at implementation time, by whoever is coding the page — and they're often guessing from a filename or a layer name, not looking at the actual image. This skill moves that judgment call earlier, into the design review, where the person looking at the file can see exactly what each image contains.
+
+It walks the node tree directly through Figma's Plugin API (no external MCP tools, no generated-code guessing), captures every image's actual rendered content, and reports specific alt-text suggestions — never guessing from a filename or layer name like `Rectangle` or `Image 1`.
 
 ```
-キャンバス上でFRAME/SECTION/COMPONENT/COMPONENT_SETを選択
+Select a FRAME / SECTION / COMPONENT / COMPONENT_SET on canvas
         │
         ▼
-Walk tree, don't skip INSTANCE subtrees（IMAGEフィルを持つノードを収集）
+Walk tree via Plugin API, don't skip INSTANCE subtrees
         │
         ▼
-同一画像（imageHash）をグルーピング — 重複は1枚だけ精査
+Group identical images (imageHash) — review duplicates once
         │
         ▼
-screenshot()で実際の見た目をキャプチャし、周辺のTEXTノードも確認
+Capture actual appearance via screenshot(), check nearby TEXT nodes
         │
         ▼
-装飾 / 要説明文を判定し、要説明文には具体的な日本語ALT文を提案
+Classify decorative vs. needs-a-description, propose specific alt text
         │
         ▼
-提案レポートを出力（書き込みはしない）
+Suggestion report (nothing written to the file)
 ```
 
-`INSTANCE`のサブツリーはスキップしません — カード/商品コンポーネントのインスタンス内に置かれた写真も、実際にレンダリングされて読まれる画像なので、チェック対象から外しません。
+`INSTANCE` subtrees are never skipped — a photo dropped inside a card/product component instance is still a rendered, real image, so it stays in scope.
 
 ---
 
-## スコープ
+## Scope
 
-- **対象:** 選択内のすべての可視な`IMAGE`フィル（`Rectangle`や`Image 1`のような自動生成名でも対象、名前でのフィルタは行いません）。装飾（アイコン+同義ラベル、背景テクスチャ）か要説明文かを判定し、後者には具体的な内容を書いたALT文を提案します
-- **非対応:** Figmaファイルへの書き込み（アノテーション追加を含む）、ベクターアイコン/イラスト（`IMAGE`フィルを持たない純粋な`VECTOR`/`BOOLEAN_OPERATION`）、ALT以外のアクセシビリティ注釈（ランドマーク・ARIAパターン）、色のコントラスト判定。これらが必要な場合はフル版`figma-alt-suggest`、あるいは`figma-annotate`・`figma-contrast-check`をご利用ください
-- `figma-contrast-check`（色のコントラストチェック）と併用すると、「配色は読めるか」と「画像は説明されているか」というアクセシビリティの異なる軸を両方カバーできます。フル版はFigma Skills講座内にFigma Design Agent版として収録されており、本スキルと同じ環境（Figmaのカスタムスキル登録）で動作します。無料公開している[`figma-contrast-check-lite`](https://github.com/gaspanik/figma-contrast-check-lite-skill)はClaude Code + Figma MCPサーバー版のため、Lite版同士を併用したい場合は別途Claude Code側のセットアップが必要です
-
----
-
-## 必要要件
-
-- **Figma（Design Agent / カスタムスキル登録機能）** — このスキルはFigma内蔵のPlugin APIスクリプト実行ツール（`evaluate_script`等）のみを使用します。読み取り専用で、ファイルへの書き込みは行いません
-- 外部のMCPサーバーやAPIキーは不要です。SKILL.md単体をFigma Design Agentのカスタムスキルとして登録するだけで動作します
+- **Reads only.** This skill inspects images and reports; it never writes anything to the file — no annotations, no fills, no layer names.
+- **Target node types:** `FRAME`, `SECTION`, `COMPONENT`, or `COMPONENT_SET`.
+- **In scope:** every visible `IMAGE` fill anywhere in the selection subtree, including generically-named nodes (name-based filtering is never used, since a name tells you nothing about what's actually in the fill).
+- **Out of scope:** vector icons/illustrations with no `IMAGE` fill, WCAG conformance beyond the alt-text content itself (color contrast is a separate concern), and accessibility notes beyond ALT text (landmarks, ARIA patterns).
 
 ---
 
-## リポジトリ構成
+## Requirements
+
+- **Figma (Design Agent / custom skill feature).** This skill only uses Figma's built-in Plugin API script execution tool (e.g. `evaluate_script`). No external MCP servers or API keys required — register `SKILL.md` as a custom skill and it runs.
+
+---
+
+## Repo structure
 
 ```
 skills/
-  figma-alt-suggest-lite/
-    SKILL.md          — Figmaのカスタムスキル登録機能に登録するスキル定義
+  alt-suggest/
+    SKILL.md          — skill definition to register in Figma's custom skill feature
     LICENSE
 ```
 
 ---
 
-## はじめかた
+## Getting started
 
-**1. スキルファイルを入手する**
+**Once published on Figma Community**, you'll be able to add this skill directly from the [AI Skills library](https://www.figma.com/community/ai-skills) — no download needed. Until then, register it from source:
 
-[Releases](https://github.com/gaspanik/figma-alt-suggest-lite-skill/releases) から最新のzip（`figma-alt-suggest-lite-vX.X.X.zip`）をダウンロードして解凍してください。中には `SKILL.md` と `LICENSE` の2ファイルだけが入っています。
-
-エンジニアの方はリポジトリをcloneしても構いません。
+**From source:** clone this repo and register the skill file yourself.
 
 ```bash
-git clone https://github.com/gaspanik/figma-alt-suggest-lite-skill
+git clone https://github.com/gaspanik/alt-suggest-skill
 ```
 
-**2. Figmaのカスタムスキル登録機能で `SKILL.md`（clone した場合は `skills/figma-alt-suggest-lite/SKILL.md`）を登録**
+**1. Register `skills/alt-suggest/SKILL.md`** in Figma's custom skill feature.
 
-**3. キャンバス上で対象のFRAME/SECTION/COMPONENT/COMPONENT_SETを選択**
+**2. Select a FRAME, SECTION, COMPONENT, or COMPONENT_SET** on the canvas.
 
-**4. チャットからスキルを実行**
-
-画像を含むフレームを選択後、チャットで以下のように入力してスキルを実行します。
-画像枚数が多い場合はその分処理に時間がかかります。セクション単位でフレームを選択して実行するのが推奨です。
+**3. Run it from the chat**
 
 ```
-/figma-alt-suggest-lite
-```
-
-```
-このフレーム内の画像にどんなALTテキストが適切か提案して
+/alt-suggest
 ```
 
 ```
 Suggest alt text for the images in this frame
 ```
 
----
+```
+このフレーム内の画像にどんなALTテキストが適切か提案して
+```
 
-## 実行時の流れ
-
-1. **対象の確認** — キャンバス上の選択がFRAME/SECTION/COMPONENT/COMPONENT_SETかどうかを確認
-2. **画像ノードの検出** — `IMAGE`フィルを持つノードをツリー全体（インスタンス内含む）から収集し、同一画像をグルーピング
-3. **キャプチャと分類** — `screenshot()`で実際の見た目を取得し、周辺のテキストとの関係から装飾/要説明文を判定、具体的なALT文を提案
-4. **レポート出力** — 分類件数のサマリーと提案の一覧表（詳細は「詳細を見せて」で表示）
+Frames with many images take longer — auditing one section at a time is recommended.
 
 ---
 
-## さらに先へ
+## Example output
 
-この軽量版は画像の検出・分類・提案ロジック単体を体験できるものです。提案の確認後にDev Modeのアノテーションとして実際に書き込めるフル版`figma-alt-suggest`、および他のFigma連携スキルを含む全スキルカタログは講座に含まれています: [KMRVID Figma Skills README](https://fragrant-edam-563.notion.site/KMRVID-Figma-Skills-README-md-3ad5dae25dd280d69c12c69b277d90b6)
+```
+## Image Alt-Text Suggestion Report
+
+Target: Hero Section (nodeId)
+
+### Summary
+
+| Classification                     | Count |
+|-------------------------------------|-------|
+| Needs a description                 | 3     |
+| Decorative (no description needed)  | 2     |
+| ⚠️ Capture failed                    | 0     |
+
+### A few of the suggestions (first 3)
+
+1. Hero > BackgroundPhoto — Suggested ALT: "Steam rising from a clay pot as broth
+   is poured, in the kitchen of a Japanese restaurant"
+2. CTA > ArrowIcon — Decorative (redundant with the adjacent "Learn more" label)
+3. Footer > MapThumbnail — Suggested ALT: "A map of the area around the shop.
+   A red pin marks the shop's location, a 5-minute walk from the nearest station"
+
+If you'd like the full list, say "show me the details."
+```
+
+---
+
+## Part of a larger set
+
+This is a simplified extract from **KMRVID Figma Skills**, a 20-skill bundle covering AI-slop-resistant page generation, multi-layout-pattern exploration, layer cleanup, contrast/accessibility checks, tokenization, component audits, and more. The full-featured version in that bundle also writes the approved suggestions into Figma's Dev Mode → Annotations panel after confirmation, so an engineer picking up the file sees the alt text alongside the design — this lite edition stops at the report, with no write access to the file: [gaspanik.gumroad.com/l/kmrvid-figmaskills](https://gaspanik.gumroad.com/l/kmrvid-figmaskills)
 
 ---
 

@@ -1,25 +1,25 @@
 ---
-name: figma-alt-suggest-lite
+name: alt-suggest
 description: >-
-  Lightweight version of the "figma-alt-suggest" skill. Walks the current
-  canvas selection (FRAME, SECTION, COMPONENT, or COMPONENT_SET), finds every
-  node with an IMAGE fill — including generically named ones like
-  `Rectangle`/`Image 1` — captures each one's actual rendered content through
-  the Plugin API, and proposes a specific alt-text description for each,
-  distinguishing meaningful images (needs a real description) from purely
-  decorative ones (icons beside labelled text, background textures). Read-only
-  — nothing is written to the file. Figma Design Agent edition. For the full
-  skill that also writes the approved suggestions as Dev Mode annotations
-  after confirmation, use `figma-alt-suggest`.
+  Walks the current canvas selection (FRAME, SECTION, COMPONENT, or
+  COMPONENT_SET), finds every node with an IMAGE fill — including generically
+  named ones like `Rectangle`/`Image 1` — captures each one's actual rendered
+  content through the Plugin API, and proposes a specific alt-text description
+  for each, distinguishing meaningful images (needs a real description) from
+  purely decorative ones (icons beside labelled text, background textures).
+  Read-only — nothing is written to the file. Figma Design Agent edition. Part
+  of KMRVID Figma Skills, a 20-skill bundle covering AI-slop-resistant page
+  generation, multi-layout exploration, layer cleanup, accessibility checks,
+  and tokenization: gaspanik.gumroad.com/l/kmrvid-figmaskills
 ---
 
-# Figma Alt-Text Suggestions (Lite)
+# Alt-Text Suggestions — Figma Image ALT Audit (Figma edition)
 
-**Ver:** ver.202608111500
+**Ver:** ver.202608272145
 
 For every image placed in the selection, look at what it actually shows and propose a specific alt-text description. This is a read-only check-and-report skill — it never writes anything to the file.
 
-**Output language:** Respond in the same language the user is using in this conversation.
+**Output language:** All user-facing output is English. If the user writes in another language, follow their language instead.
 
 **Environment:** This edition runs inside Figma's agent environment. The target comes from the current canvas selection, and all reads go through the Plugin API script execution tool (e.g. `evaluate_script`) — no URLs, no external MCP tools.
 
