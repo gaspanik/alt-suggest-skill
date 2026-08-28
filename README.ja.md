@@ -107,10 +107,4 @@ Suggest alt text for the images in this frame
 
 ---
 
-## さらに先へ
-
-この軽量版は画像の検出・分類・提案ロジック単体を体験できるものです。提案の確認後にDev Modeのアノテーションとして実際に書き込めるフル版`figma-alt-suggest`、および他のFigma連携スキルを含む全スキルカタログは講座に含まれています: [KMRVID Figma Skills README](https://fragrant-edam-563.notion.site/KMRVID-Figma-Skills-README-md-3ad5dae25dd280d69c12c69b277d90b6)
-
----
-
 Built by Masaaki Komori - [@cipher](https://x.com/cipher) · Skill for [Figma](https://www.figma.com/)
