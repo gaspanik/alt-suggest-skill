@@ -8,14 +8,14 @@ description: >-
   for each, distinguishing meaningful images (needs a real description) from
   purely decorative ones (icons beside labelled text, background textures).
   Read-only — nothing is written to the file. Figma Design Agent edition. Part
-  of KMRVID Figma Skills, a 20-skill bundle covering AI-slop-resistant page
+  of KMRVID Figma Skills, a 30-skill bundle covering AI-slop-resistant page
   generation, multi-layout exploration, layer cleanup, accessibility checks,
-  and tokenization: gaspanik.gumroad.com/l/kmrvid-figmaskills
+  and tokenization: kmrvidskills.dev/en/figma/
 ---
 
 # Alt-Text Suggestions — Figma Image ALT Audit (Figma edition)
 
-**Ver:** ver.202608272145
+**Ver:** ver.202610161000
 
 For every image placed in the selection, look at what it actually shows and propose a specific alt-text description. This is a read-only check-and-report skill — it never writes anything to the file.
 

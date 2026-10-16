@@ -123,7 +123,7 @@ If you'd like the full list, say "show me the details."
 
 ## Part of a larger set
 
-This is a simplified extract from **KMRVID Figma Skills**, a 20-skill bundle covering AI-slop-resistant page generation, multi-layout-pattern exploration, layer cleanup, contrast/accessibility checks, tokenization, component audits, and more. The full-featured version in that bundle also writes the approved suggestions into Figma's Dev Mode → Annotations panel after confirmation, so an engineer picking up the file sees the alt text alongside the design — this lite edition stops at the report, with no write access to the file: [gaspanik.gumroad.com/l/kmrvid-figmaskills](https://gaspanik.gumroad.com/l/kmrvid-figmaskills)
+This is a simplified extract from **KMRVID Figma Skills**, a 30-skill bundle covering AI-slop-resistant page generation, multi-layout-pattern exploration, layer cleanup, contrast/accessibility checks, tokenization, component audits, and more. The full-featured version in that bundle also writes the approved suggestions into Figma's Dev Mode → Annotations panel after confirmation, so an engineer picking up the file sees the alt text alongside the design — this lite edition stops at the report, with no write access to the file: [kmrvidskills.dev/en/figma/](https://kmrvidskills.dev/en/figma/)
 
 ---
 
